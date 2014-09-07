@@ -26,7 +26,7 @@ import java.awt.Toolkit;
  * @author ShortCircuit908
  */
 public class UnturnedSaveManager {
-
+    public final String version = "1.0.2";
     private JFrame frmUnturnedSaveManager;
     private JTextField name_text;
     public JList<String> save_list;
@@ -69,7 +69,7 @@ public class UnturnedSaveManager {
         save_manager = new SaveManager();
         frmUnturnedSaveManager = new JFrame();
         frmUnturnedSaveManager.setResizable(false);
-        frmUnturnedSaveManager.setTitle("Unturned Save Manager v1.0.1");
+        frmUnturnedSaveManager.setTitle("Unturned Save Manager v" + version);
         frmUnturnedSaveManager.setIconImage(Toolkit.getDefaultToolkit().getImage(UnturnedSaveManager.class
                 .getResource("/com/shortcircuit/unturnedsavemanager/resources/icon.png")));
         frmUnturnedSaveManager.setBounds(100, 100, 450, 300);
