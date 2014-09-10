@@ -3,7 +3,7 @@ package com.shortcircuit.unturnedsavemanager.managers;
 import java.io.File;
 import java.io.IOException;
 
-/* 
+/**
  * @author ShortCircuit908
  */
 public class SaveManager {
@@ -18,6 +18,7 @@ public class SaveManager {
         }
         catch(IOException e) {
             e.printStackTrace();
+            System.exit(0);
         }
     }
     public boolean importSave(String name) {
@@ -30,8 +31,18 @@ public class SaveManager {
             }
             catch(IOException e) {
                 e.printStackTrace();
+                System.exit(0);
             }
         }
         return false;
+    }
+    public void resetSave() {
+        try {
+            Runtime.getRuntime().exec("REG DELETE \"HKEY_CURRENT_USER\\Software\\Smartly Dressed Games\\Unturned\" /f");
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
     }
 }

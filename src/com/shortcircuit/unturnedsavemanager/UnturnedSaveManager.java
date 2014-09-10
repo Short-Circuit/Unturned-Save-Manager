@@ -22,22 +22,23 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.Toolkit;
 
-/*
+/**
  * @author ShortCircuit908
  */
 public class UnturnedSaveManager {
-    public final String version = "1.0.2";
+    public final String version = "1.1.0";
     private JFrame frmUnturnedSaveManager;
     private JTextField name_text;
     public JList<String> save_list;
     private Thread search_thread;
     private JTextPane txt_save;
     private SaveManager save_manager;
-    public JButton btn_select;
-    public JButton btn_export;
-    public JButton btn_confirm;
-    public JButton btn_load;
-    public JButton btn_delete;
+    private JButton btn_select;
+    private JButton btn_export;
+    private JButton btn_confirm;
+    private JButton btn_load;
+    private JButton btn_delete;
+    private JButton btn_reset;
     /**
      * Launch the application.
      */
@@ -139,7 +140,7 @@ public class UnturnedSaveManager {
         btn_delete.setBounds(338, 204, 96, 23);
         frmUnturnedSaveManager.getContentPane().add(btn_delete);
 
-        btn_export = new JButton("Export current save");
+        btn_export = new JButton("Export current map");
         btn_export.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 name_text.setText("");
@@ -147,7 +148,7 @@ public class UnturnedSaveManager {
                 name_text.setEditable(true);
             }
         });
-        btn_export.setBounds(233, 10, 201, 23);
+        btn_export.setBounds(233, 44, 201, 23);
         frmUnturnedSaveManager.getContentPane().add(btn_export);
 
         name_text = new JTextField();
@@ -170,7 +171,7 @@ public class UnturnedSaveManager {
         name_text.setText("Please enter a name...");
         name_text.setEnabled(false);
         name_text.setEditable(false);
-        name_text.setBounds(233, 44, 201, 23);
+        name_text.setBounds(233, 78, 201, 23);
         frmUnturnedSaveManager.getContentPane().add(name_text);
         name_text.setColumns(10);
 
@@ -191,8 +192,17 @@ public class UnturnedSaveManager {
             }
         });
         btn_confirm.setEnabled(false);
-        btn_confirm.setBounds(338, 78, 96, 23);
+        btn_confirm.setBounds(339, 111, 96, 23);
         frmUnturnedSaveManager.getContentPane().add(btn_confirm);
+        
+        btn_reset = new JButton("Reset current map");
+        btn_reset.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                save_manager.resetSave();
+            }
+        });
+        btn_reset.setBounds(233, 10, 201, 23);
+        frmUnturnedSaveManager.getContentPane().add(btn_reset);
         
         search_thread = new Thread(new FileWatchThread(this));
         search_thread.start();
