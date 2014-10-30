@@ -20,7 +20,6 @@ import javax.swing.border.EtchedBorder;
 
 import com.shortcircuit.unturnedsavemanager.managers.FileWatchThread;
 import com.shortcircuit.unturnedsavemanager.managers.RegistrySaveManager;
-import com.shortcircuit.unturnedsavemanager.managers.SaveManager;
 
 /**
  * @author ShortCircuit908
@@ -32,7 +31,6 @@ public class UnturnedSaveManager extends JFrame{
     public JList<String> save_list;
     private Thread search_thread;
     private JTextPane txt_save;
-    private SaveManager save_manager;
     private RegistrySaveManager reg_manager;
     private JButton btn_select;
     private JButton btn_export;
@@ -59,7 +57,6 @@ public class UnturnedSaveManager extends JFrame{
      * Initialize the contents of the frame.
      */
     private void initialize() {
-        save_manager = new SaveManager();
         reg_manager = new RegistrySaveManager();
         setResizable(false);
         setTitle("Unturned Save Manager v" + version);
@@ -111,7 +108,7 @@ public class UnturnedSaveManager extends JFrame{
         btn_load.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 if(!txt_save.getText().equals("Please select a save...")) {
-                    save_manager.importSave(txt_save.getText());
+                    reg_manager.importReg(txt_save.getText());
                 }
             }
         });
@@ -137,6 +134,7 @@ public class UnturnedSaveManager extends JFrame{
             public void actionPerformed(ActionEvent event) {
                 name_text.setText("");
                 name_text.setEnabled(true);
+                export_players.setEnabled(true);
                 name_text.setEditable(true);
             }
         });
@@ -151,10 +149,12 @@ public class UnturnedSaveManager extends JFrame{
                     name_text.setText("Please enter a name...");
                     name_text.setForeground(Color.LIGHT_GRAY);
                     name_text.setEditable(false);
+                    export_players.setEnabled(false);
                 }
                 else if(!name_text.getText().equals("Please enter a name...")){
                     name_text.setForeground(Color.BLACK);
                     name_text.setEditable(true);
+                    export_players.setEnabled(true);
                 }
                 btn_confirm.setEnabled(!name_text.getText().equals("Please enter a name..."));
             }
@@ -190,13 +190,16 @@ public class UnturnedSaveManager extends JFrame{
         btn_reset = new JButton("Reset current map");
         btn_reset.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                save_manager.resetSave();
+                reg_manager.resetMap();
             }
         });
         btn_reset.setBounds(233, 10, 201, 23);
         getContentPane().add(btn_reset);
         
         export_players = new JCheckBox("Include player data");
+        export_players.setToolTipText("Save player data (inventory, location, skills, etc)");
+        export_players.setSelected(true);
+        export_players.setEnabled(false);
         export_players.setBounds(231, 108, 203, 23);
         getContentPane().add(export_players);
         
