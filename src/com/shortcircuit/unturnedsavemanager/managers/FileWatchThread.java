@@ -1,6 +1,3 @@
-/**
- * @author ShortCircuit908
- */
 package com.shortcircuit.unturnedsavemanager.managers;
 
 import java.io.File;
