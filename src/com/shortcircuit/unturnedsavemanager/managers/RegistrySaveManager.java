@@ -37,9 +37,23 @@ public class RegistrySaveManager {
                 }
                 else {
                     for(String reg_key : reg_keys) {
-                        String reg_entry = WinRegistry.readString(WinRegistry.HKEY_CURRENT_USER,
-                                "Software\\Smartly Dressed Games\\Unturned", reg_key);
-                        data += "\"" + reg_key + "\"=\"" + reg_entry + "\"\n";
+                        String reg_entry = "\"" + WinRegistry.readString(WinRegistry.HKEY_CURRENT_USER,
+                                "Software\\Smartly Dressed Games\\Unturned", reg_key) + "\"";
+                        if(reg_entry.equals("\"null\"")) {
+                            Process proc = Runtime.getRuntime().exec("REG QUERY \"HKEY_CURRENT_USER\\"
+                                    + "Software\\Smartly Dressed Games\\Unturned\" /v " + reg_key + " /z");
+                            Scanner scan = new Scanner(proc.getInputStream());
+                            scan.nextLine();
+                            scan.nextLine();
+                            String[] reg_values = scan.nextLine().trim().split("    ");
+                            proc.waitFor();
+                            scan.close();
+                            proc.destroy();
+                            if(reg_values.length == 3) {
+                                reg_entry = reg_values[2];
+                            }
+                        }
+                        data += "\"" + reg_key + "\"=" + reg_entry + "\n";
                     }
                 }
             }
@@ -53,7 +67,8 @@ public class RegistrySaveManager {
         try {
             File save = new File("Saves/" + name + ".reg");
             save.createNewFile();
-            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(save), "UTF-8"));
+            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(save),
+                    "windows-1252"));
             out.write(data);
             out.flush();
             out.close();

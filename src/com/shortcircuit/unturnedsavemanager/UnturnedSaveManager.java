@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -31,7 +33,7 @@ import com.shortcircuit.unturnedsavemanager.registry.WinRegistry;
  */
 public class UnturnedSaveManager extends JFrame{
     private static final long serialVersionUID = -1182579377443890522L;
-    public final String version = "1.1.1";
+    public final String version = "1.1.2";
     private JTextField name_text;
     public JList<String> save_list;
     private Thread search_thread;
@@ -149,25 +151,46 @@ public class UnturnedSaveManager extends JFrame{
         btn_export.setBounds(233, 44, 201, 23);
         getContentPane().add(btn_export);
 
+        btn_confirm = new JButton("Export");
+        btn_confirm.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if(!name_text.getText().equals("Please enter a name...")){
+                    reg_manager.save(name_text.getText(), export_players.isSelected());
+                    refreshCurrentMap();
+                }
+            }
+        });
+        btn_confirm.setEnabled(false);
+        btn_confirm.setBounds(338, 134, 96, 23);
+        getContentPane().add(btn_confirm);
+
+        export_players = new JCheckBox("Include player data");
+        export_players.setToolTipText("Save player data (inventory, location, skills, etc)");
+        export_players.setSelected(true);
+        export_players.setEnabled(false);
+        export_players.setBounds(231, 108, 203, 23);
+        getContentPane().add(export_players);
+
         name_text = new JTextField();
         name_text.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyReleased(KeyEvent event) {
-                if(name_text.getText().isEmpty()) {
-                    name_text.setText("Please enter a name...");
-                    name_text.setForeground(Color.LIGHT_GRAY);
-                    name_text.setEditable(false);
-                    export_players.setEnabled(false);
-                }
-                else if(!name_text.getText().equals("Please enter a name...")){
-                    name_text.setForeground(Color.BLACK);
-                    name_text.setEditable(true);
-                    export_players.setEnabled(true);
-                }
-                btn_confirm.setEnabled(!name_text.getText().equals("Please enter a name..."));
+            public void keyReleased(KeyEvent arg0) {
+                btn_confirm.setEnabled(!name_text.getText().equals("Please enter a name...")
+                        && !name_text.getText().trim().isEmpty());
             }
         });
-        name_text.setForeground(Color.LIGHT_GRAY);
+        name_text.setDisabledTextColor(Color.LIGHT_GRAY);
+        name_text.setInputVerifier(new NameVerifier(btn_confirm, export_players));
+        name_text.setVerifyInputWhenFocusTarget(true);
+        name_text.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent event) {
+                if(name_text.getText().equals("Please enter a name...")) {
+                    name_text.setText("");
+                    name_text.setEnabled(true);
+                }
+            }
+        });
         name_text.setText("Please enter a name...");
         name_text.setEnabled(false);
         name_text.setEditable(false);
@@ -183,19 +206,6 @@ public class UnturnedSaveManager extends JFrame{
         txt_save.setBounds(233, 238, 201, 23);
         getContentPane().add(txt_save);
 
-        btn_confirm = new JButton("Export");
-        btn_confirm.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                if(!name_text.getText().equals("Please enter a name...")){
-                    reg_manager.save(name_text.getText(), export_players.isSelected());
-                    refreshCurrentMap();
-                }
-            }
-        });
-        btn_confirm.setEnabled(false);
-        btn_confirm.setBounds(338, 134, 96, 23);
-        getContentPane().add(btn_confirm);
-
         btn_reset = new JButton("Reset current map");
         btn_reset.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -205,13 +215,6 @@ public class UnturnedSaveManager extends JFrame{
         });
         btn_reset.setBounds(233, 10, 201, 23);
         getContentPane().add(btn_reset);
-
-        export_players = new JCheckBox("Include player data");
-        export_players.setToolTipText("Save player data (inventory, location, skills, etc)");
-        export_players.setSelected(true);
-        export_players.setEnabled(false);
-        export_players.setBounds(231, 108, 203, 23);
-        getContentPane().add(export_players);
 
         current_map = new JLabel("Current map:");
         current_map.setBounds(10, 10, 201, 14);
