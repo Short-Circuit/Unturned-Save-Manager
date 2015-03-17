@@ -1,255 +1,229 @@
 package com.shortcircuit.unturnedsavemanager;
 
-import java.awt.Color;
+import com.shortcircuit.unturnedsavemanager.managers.RegistrySaveManager;
+import com.shortcircuit.unturnedsavemanager.objects.MapSave;
+import com.shortcircuit.unturnedsavemanager.registry.WinRegistry;
+import com.shortcircuit.unturnedsavemanager.swing.Confirmation;
+import com.shortcircuit.unturnedsavemanager.swing.InputConfirmation;
+import com.shortcircuit.unturnedsavemanager.swing.MapListModel;
+
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.border.EtchedBorder;
-
-import com.shortcircuit.unturnedsavemanager.managers.FileWatchThread;
-import com.shortcircuit.unturnedsavemanager.managers.RegistrySaveManager;
-import com.shortcircuit.unturnedsavemanager.registry.WinRegistry;
+import javax.swing.JPanel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  * @author ShortCircuit908
  */
-public class UnturnedSaveManager extends JFrame{
-    private static final long serialVersionUID = -1182579377443890522L;
-    public final String version = "1.1.2";
-    private JTextField name_text;
-    public JList<String> save_list;
-    private Thread search_thread;
-    private JTextPane txt_save;
-    private RegistrySaveManager reg_manager;
-    private JButton btn_select;
-    private JButton btn_export;
-    private JButton btn_confirm;
-    private JButton btn_load;
-    private JButton btn_delete;
-    private JButton btn_reset;
-    private JCheckBox export_players;
-    private JLabel current_map;
-    /**
-     * Launch the application.
-     */
-    public static void main(String[] args) {
-        new UnturnedSaveManager();
-    }
+public class UnturnedSaveManager {
+	private JFrame frame;
+	private JLabel current_map;
+	private JButton button_export;
+	private JButton button_backup;
+	private JButton button_reset;
+	private JList<MapSave> map_list;
+	private JPanel content_panel;
+	private JButton button_load;
+	private JButton button_delete;
+	private JButton button_restore;
+	private final RegistrySaveManager save_manager = new RegistrySaveManager();
+	private static UnturnedSaveManager manager;
+	private static Method LOAD_MAP;
+	private static Method DELETE_MAP;
+	private static Method SAVE_MAP;
+	private static Method RESET_MAP;
+	private static Method CONFIRM_OVERWRITE;
+	private static Method RESTORE_BACKUP;
+	public static final File SAVE_DIR = new File("Saves");
+	private final SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd'_'HH-mm-ss");
+	static{
+		SAVE_DIR.mkdirs();
+		try{
+			LOAD_MAP = UnturnedSaveManager.class.getDeclaredMethod("loadMap");
+			DELETE_MAP = UnturnedSaveManager.class.getDeclaredMethod("deleteMap");
+			SAVE_MAP = UnturnedSaveManager.class.getDeclaredMethod("saveMap", String.class, boolean.class);
+			RESET_MAP = UnturnedSaveManager.class.getDeclaredMethod("resetMap");
+			CONFIRM_OVERWRITE = UnturnedSaveManager.class.getDeclaredMethod("confirmOverwrite", String.class, boolean.class);
+			RESTORE_BACKUP = UnturnedSaveManager.class.getDeclaredMethod("restoreBackup");
+		}
+		catch(ReflectiveOperationException e){
+			e.printStackTrace();
+		}
+	}
 
-    /**
-     * Create the application.
-     */
-    public UnturnedSaveManager() {
-        initialize();
-    }
+	public static void main(String... args) {
+		manager = new UnturnedSaveManager();
+	}
 
-    /**
-     * Initialize the contents of the frame.
-     */
-    private void initialize() {
-        saveDefaults();
-        reg_manager = new RegistrySaveManager();
-        setResizable(false);
-        setTitle("Unturned Save Manager v" + version);
-        setIconImage(Toolkit.getDefaultToolkit().getImage(UnturnedSaveManager.class
-                .getResource("/com/shortcircuit/unturnedsavemanager/resources/icon.png")));
-        setBounds(100, 100, 450, 300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        getContentPane().setLayout(null);
+	public UnturnedSaveManager() {
+		frame = new JFrame("Unturned Save Manager");
+		frame.setIconImage(Toolkit.getDefaultToolkit().getImage(UnturnedSaveManager.class
+				.getResource("/com/shortcircuit/unturnedsavemanager/resources/icon.png")));
+		frame.setContentPane(content_panel);
+		final MapListModel model = new MapListModel();
+		map_list.setModel(model);
+		new Thread(model).start();
+		updateMapName();
+		map_list.addListSelectionListener(new ListSelectionListener() {
+			@Override
+			public void valueChanged(ListSelectionEvent e) {
+				boolean selected = e.getFirstIndex() != -1;
+				button_delete.setEnabled(selected);
+				button_load.setEnabled(selected);
+				button_restore.setEnabled(selected && map_list.getSelectedValue().isBackup());
+			}
+		});
+		/*
+		map_list.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusLost(FocusEvent e) {
+				super.focusLost(e);
+				button_delete.setEnabled(false);
+				button_load.setEnabled(false);
+				map_list.setSelectedIndices(new int[]{});
+			}
+		});
+		*/
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				super.windowClosing(e);
+				model.halt();
+				frame.dispose();
+			}
+		});
+		frame.pack();
+		frame.setLocationByPlatform(true);
+		frame.setVisible(true);
+		button_load.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Load map", "Overwrite the current map?", LOAD_MAP, null);
+			}
+		});
+		button_delete.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Delete map", "Delete this map?", DELETE_MAP, null);
+			}
+		});
+		button_backup.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				createBackup();
+			}
+		});
+		button_export.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new InputConfirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(),
+						"Save as", CONFIRM_OVERWRITE);
+			}
+		});
+		button_reset.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Reset map",
+						"Reset current map?", RESET_MAP, null);
+			}
+		});
+		button_restore.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(),
+						"Restore backup", "Overwrite the current map?", RESTORE_BACKUP, null);
+			}
+		});
+		saveDefaults();
+	}
 
-        btn_select = new JButton("Select save");
-        btn_select.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                if(save_list.getSelectedIndex() != -1) {
-                    txt_save.setForeground(Color.BLACK);
-                    txt_save.setText(save_list.getSelectedValue());
-                    btn_load.setEnabled(true);
-                    btn_delete.setEnabled(true);
-                }
-                else {
-                    txt_save.setForeground(Color.LIGHT_GRAY);
-                    txt_save.setText("Please select a save...");
-                    btn_load.setEnabled(false);
-                    btn_delete.setEnabled(false);
-                }
-            }
-        });
-        btn_select.setEnabled(false);
-        btn_select.setBounds(10, 238, 201, 23);
-        getContentPane().add(btn_select);
+	public void updateMapName() {
+		String map_name = "Unnamed";
+		try {
+			map_name = WinRegistry.readString(WinRegistry.HKEY_CURRENT_USER, "Software\\Smartly "
+					+ "Dressed Games\\Unturned", "MapName");
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		if(map_name != null) {
+			current_map.setText(map_name);
+		}
+		else{
+			current_map.setText("Unnamed");
+		}
+	}
 
-        save_list = new JList<String>();
-        save_list.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent event) {
-                if(save_list.getSelectedIndex() != -1) {
-                    btn_select.setEnabled(true);
-                }
-                else {
-                    btn_select.setEnabled(false);
-                }
-            }
-        });
-        save_list.setValueIsAdjusting(true);
-        save_list.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-        save_list.setBounds(10, 35, 201, 192);
-        getContentPane().add(save_list);
+	private void loadMap(){
+		save_manager.importReg(map_list.getSelectedValue().getFile());
+		updateMapName();
+	}
 
-        btn_load = new JButton("Load");
-        btn_load.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                if(!txt_save.getText().equals("Please select a save...")) {
-                    reg_manager.importReg(txt_save.getText());
-                    refreshCurrentMap();
-                }
-            }
-        });
-        btn_load.setEnabled(false);
-        btn_load.setBounds(232, 204, 96, 23);
-        getContentPane().add(btn_load);
+	private void deleteMap(){
+		for(MapSave map : map_list.getSelectedValuesList()) {
+			map.getFile().delete();
+		}
+	}
 
-        btn_delete = new JButton("Delete");
-        btn_delete.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                if(!txt_save.getText().equals("Please select a save...")) {
-                    File file = new File("Saves/" + txt_save.getText() + ".reg");
-                    file.delete();
-                }
-            }
-        });
-        btn_delete.setEnabled(false);
-        btn_delete.setBounds(338, 204, 96, 23);
-        getContentPane().add(btn_delete);
+	private void createBackup(){
+		save_manager.backUpWorld(date_format.format(new Date()));
+	}
 
-        btn_export = new JButton("Export current map");
-        btn_export.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                name_text.setText("");
-                name_text.setEnabled(true);
-                export_players.setEnabled(true);
-                name_text.setEditable(true);
-            }
-        });
-        btn_export.setBounds(233, 44, 201, 23);
-        getContentPane().add(btn_export);
+	private void saveMap(String map_name, boolean save_players){
+		save_manager.save(map_name, save_players);
+	}
 
-        btn_confirm = new JButton("Export");
-        btn_confirm.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                if(!name_text.getText().equals("Please enter a name...")){
-                    reg_manager.save(name_text.getText(), export_players.isSelected());
-                    refreshCurrentMap();
-                }
-            }
-        });
-        btn_confirm.setEnabled(false);
-        btn_confirm.setBounds(338, 134, 96, 23);
-        getContentPane().add(btn_confirm);
+	private void resetMap(){
+		save_manager.resetMap();
+		updateMapName();
+	}
 
-        export_players = new JCheckBox("Include player data");
-        export_players.setToolTipText("Save player data (inventory, location, skills, etc)");
-        export_players.setSelected(true);
-        export_players.setEnabled(false);
-        export_players.setBounds(231, 108, 203, 23);
-        getContentPane().add(export_players);
+	private void restoreBackup(){
+		save_manager.restoreBackup(map_list.getSelectedValue().getName());
+		updateMapName();
+	}
 
-        name_text = new JTextField();
-        name_text.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-                btn_confirm.setEnabled(!name_text.getText().equals("Please enter a name...")
-                        && !name_text.getText().trim().isEmpty());
-            }
-        });
-        name_text.setDisabledTextColor(Color.LIGHT_GRAY);
-        name_text.setInputVerifier(new NameVerifier(btn_confirm, export_players));
-        name_text.setVerifyInputWhenFocusTarget(true);
-        name_text.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent event) {
-                if(name_text.getText().equals("Please enter a name...")) {
-                    name_text.setText("");
-                    name_text.setEnabled(true);
-                }
-            }
-        });
-        name_text.setText("Please enter a name...");
-        name_text.setEnabled(false);
-        name_text.setEditable(false);
-        name_text.setBounds(233, 78, 201, 23);
-        getContentPane().add(name_text);
-        name_text.setColumns(10);
+	private void confirmOverwrite(String map_name, boolean save_players) {
+		File file = new File(SAVE_DIR + "/" + map_name + ".reg");
+		if(file.exists()) {
+			new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Export map",
+					"Overwrite save file?", SAVE_MAP, null, map_name, save_players);
+		}
+		else{
+			saveMap(map_name, save_players);
+		}
+	}
 
-        txt_save = new JTextPane();
-        txt_save.setForeground(Color.LIGHT_GRAY);
-        txt_save.setText("Please select a save...");
-        txt_save.setEditable(false);
-        txt_save.setHighlighter(null);
-        txt_save.setBounds(233, 238, 201, 23);
-        getContentPane().add(txt_save);
-
-        btn_reset = new JButton("Reset current map");
-        btn_reset.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                reg_manager.resetMap();
-                refreshCurrentMap();
-            }
-        });
-        btn_reset.setBounds(233, 10, 201, 23);
-        getContentPane().add(btn_reset);
-
-        current_map = new JLabel("Current map:");
-        current_map.setBounds(10, 10, 201, 14);
-        getContentPane().add(current_map);
-
-        search_thread = new Thread(new FileWatchThread(this));
-        search_thread.start();
-        setVisible(true);
-        refreshCurrentMap();
-    }
-    public void refreshCurrentMap() {
-        try {
-            String map_name = WinRegistry.readString(WinRegistry.HKEY_CURRENT_USER, "Software\\Smartly "
-                    + "Dressed Games\\Unturned", "MapName");
-            if(map_name == null) {
-                map_name = "Unnamed map";
-            }
-            current_map.setText("Current map: " + map_name);
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-    public void saveDefaults() {
-        try {
-            File saves = new File("Saves");
-            saves.mkdirs();
-            String[] files = {"LICENSE", "README", "CHANGELOG", "USAGE"};
-            for(String file_name : files) {
-                Files.copy(UnturnedSaveManager.class.getResourceAsStream("/" + file_name + ".txt"),
-                        new File(file_name + ".txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-        }
-    }
+	private void saveDefaults(){
+		try {
+			Files.copy(UnturnedSaveManager.class.getResource("/com/shortcircuit/unturnedsavemanager/" +
+					"resources/LICENSE.txt").openStream(), new File("LICENSE.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			Files.copy(UnturnedSaveManager.class.getResource("/com/shortcircuit/unturnedsavemanager/" +
+					"resources/CHANGELOG.txt").openStream(), new File("CHANGELOG.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			Files.copy(UnturnedSaveManager.class.getResource("/com/shortcircuit/unturnedsavemanager/" +
+					"resources/README.txt").openStream(), new File("README.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+			Files.copy(UnturnedSaveManager.class.getResource("/com/shortcircuit/unturnedsavemanager/" +
+					"resources/USAGE.txt").openStream(), new File("USAGE.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+	}
 }

@@ -18,3 +18,6 @@
 |1.1.2   | Fixed issue with registry encoding                    |
 |        | Improved UI                                           |
 +--------+-------------------------------------------------------+
+|1.2.0   | Added ability to back up maps                         |
+|        | Updated GUI                                           |
++--------+-------------------------------------------------------+

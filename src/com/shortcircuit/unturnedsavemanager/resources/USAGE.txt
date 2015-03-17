@@ -1,0 +1,41 @@
+  //-----------------------//
+ // Unturned Save Manager //
+//-----------------------//
+By Short Circuit
+
+Unturned Save Manager is a tool to manage multiple Unturned maps. Maps can be saved, loaded, and deleted. Always fully exit Unturned before using this tool.
+
+Due to a recent bug, it is advised to make a backup of the current map before saving/loading maps
+
+---SAVING MAPS---
+1. Click "Export"
+2. Enter a name for the map
+3. Select whether or not to include player data in the save
+4. Click "OK"
+
+---LOADING MAPS---
+1. If the game is open, exit to the main menu
+2. Select the map from the list on the left
+4. Click "Load"
+5. Click "OK"
+6. Rejoin the game. The new map will be loaded.
+
+---DELETING MAPS---
+1. Select the maps from the list on the left
+2. Click "Delete"
+3. Click "OK"
+
+---RESETTING THE MAP---
+1. If the game is open, exit to the main menu
+2. Click "Reset"
+3. Click "OK"
+4. Rejoin the game. The map will be reset
+
+---RESTORING A BACKUP---
+1. If the game is open, exit to the main menu
+2. Select the backup from the list on the left
+3. Click "Restore Backup"
+4. Click "OK"
+5. Rejoin the game. The backup will be restored
+
+I hope you find this tool useful!
