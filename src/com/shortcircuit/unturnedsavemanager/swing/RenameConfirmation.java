@@ -3,6 +3,7 @@ package com.shortcircuit.unturnedsavemanager.swing;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -11,33 +12,28 @@ import java.lang.reflect.Method;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
-public class Confirmation extends JDialog {
+public class RenameConfirmation extends JDialog {
 	private JPanel contentPane;
 	private JButton buttonOK;
 	private JButton buttonCancel;
-	private JLabel message_label;
-	private final Method invoke_on_OK;
-	private final Method invoke_on_cancel;
+	private JTextField name_field;
 	private final Object parent;
-	private Object[] method_args;
+	private final Method invoke_on_OK;
 
-	public Confirmation(Object parent, Image icon_image, String title, String message, Method invoke_on_OK,
-						Method invoke_on_cancel, Object... method_args) {
+	public RenameConfirmation(Object parent, Image icon_image, String title, Method invoke_on_OK) {
 		this.parent = parent;
 		this.invoke_on_OK = invoke_on_OK;
-		this.invoke_on_cancel = invoke_on_cancel;
-		this.method_args = method_args;
 		setContentPane(contentPane);
 		setModal(true);
 		getRootPane().setDefaultButton(buttonOK);
-		setTitle(title);
 		setLocationByPlatform(true);
 		setIconImage(icon_image);
-		message_label.setText(message);
+		setTitle(title);
+
 		buttonOK.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				onOK();
@@ -47,6 +43,17 @@ public class Confirmation extends JDialog {
 		buttonCancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				onCancel();
+			}
+		});
+		final NameVerifier verifier = new NameVerifier(buttonOK);
+		name_field.setInputVerifier(verifier);
+		name_field.setVerifyInputWhenFocusTarget(true);
+
+		name_field.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				super.keyReleased(e);
+				verifier.verify(name_field);
 			}
 		});
 
@@ -64,6 +71,7 @@ public class Confirmation extends JDialog {
 				onCancel();
 			}
 		}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
 		pack();
 		setVisible(true);
 	}
@@ -72,7 +80,7 @@ public class Confirmation extends JDialog {
 		if(invoke_on_OK != null) {
 			try {
 				invoke_on_OK.setAccessible(true);
-				invoke_on_OK.invoke(parent, method_args);
+				invoke_on_OK.invoke(parent, name_field.getText());
 			}
 			catch(ReflectiveOperationException e) {
 				e.printStackTrace();
@@ -82,15 +90,6 @@ public class Confirmation extends JDialog {
 	}
 
 	private void onCancel() {
-		if(invoke_on_cancel != null) {
-			try {
-				invoke_on_cancel.setAccessible(true);
-				invoke_on_cancel.invoke(parent, method_args);
-			}
-			catch(ReflectiveOperationException e) {
-				e.printStackTrace();
-			}
-		}
 		dispose();
 	}
 }

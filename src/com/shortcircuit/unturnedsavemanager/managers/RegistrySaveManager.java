@@ -30,32 +30,30 @@ public class RegistrySaveManager {
 			if(save_players) {
 				key_string += " inventory last clothes skills life position";
 			}
+			WinRegistry.deleteKey(WinRegistry.HKEY_CURRENT_USER, "Software\\Smartly Dressed Games\\Unturned");
+			WinRegistry.createKey(WinRegistry.HKEY_CURRENT_USER, "Software\\Smartly Dressed Games\\Unturned");
+			WinRegistry.writeStringValue(WinRegistry.HKEY_CURRENT_USER, "Software\\Smartly Dressed Games\\Unturned", "MapName", name);
 			String[] keys = key_string.split(" ");
 			for(String key : keys) {
 				List<String> reg_keys = getMatchingKeys(key);
-				if(reg_keys.isEmpty() && key.equals("MapName")) {
-					data += "\"MapName\"=\"" + name + "\"\n";
-				}
-				else {
-					for(String reg_key : reg_keys) {
-						String reg_entry = "\"" + WinRegistry.readString(WinRegistry.HKEY_CURRENT_USER,
-								"Software\\Smartly Dressed Games\\Unturned", reg_key) + "\"";
-						if(reg_entry.equals("\"null\"")) {
-							Process proc = Runtime.getRuntime().exec("REG QUERY \"HKEY_CURRENT_USER\\"
-									+ "Software\\Smartly Dressed Games\\Unturned\" /v " + reg_key + " /z");
-							Scanner scan = new Scanner(proc.getInputStream());
-							scan.nextLine();
-							scan.nextLine();
-							String[] reg_values = scan.nextLine().trim().split("    ");
-							proc.waitFor();
-							scan.close();
-							proc.destroy();
-							if(reg_values.length == 3) {
-								reg_entry = reg_values[2];
-							}
+				for(String reg_key : reg_keys) {
+					String reg_entry = "\"" + WinRegistry.readString(WinRegistry.HKEY_CURRENT_USER,
+							"Software\\Smartly Dressed Games\\Unturned", reg_key) + "\"";
+					if(reg_entry.equals("\"null\"")) {
+						Process proc = Runtime.getRuntime().exec("REG QUERY \"HKEY_CURRENT_USER\\"
+								+ "Software\\Smartly Dressed Games\\Unturned\" /v " + reg_key + " /z");
+						Scanner scan = new Scanner(proc.getInputStream());
+						scan.nextLine();
+						scan.nextLine();
+						String[] reg_values = scan.nextLine().trim().split("    ");
+						proc.waitFor();
+						scan.close();
+						proc.destroy();
+						if(reg_values.length == 3) {
+							reg_entry = reg_values[2];
 						}
-						data += "\"" + reg_key + "\"=" + reg_entry + "\n";
 					}
+					data += "\"" + reg_key + "\"=" + reg_entry + "\n";
 				}
 			}
 			composeReg(name, data);
@@ -122,7 +120,7 @@ public class RegistrySaveManager {
 			Scanner scan = new Scanner(proc.getInputStream());
 			while(scan.hasNextLine()) {
 				String line = scan.nextLine().trim();
-				if(line.startsWith(prefix) && !line.equals(dir.replace("\"", "")) && !line.isEmpty()) {
+				if(!line.isEmpty() && line.startsWith(prefix) && !line.equals(dir.replace("\"", ""))) {
 					results.add(line.split("    ")[0]);
 				}
 			}
@@ -148,14 +146,14 @@ public class RegistrySaveManager {
 		}
 	}
 
-	public void restoreBackup(String name){
-		try{
+	public void restoreBackup(String name) {
+		try {
 			String file_name = UnturnedSaveManager.SAVE_DIR + "/" + name + ".reg.bak";
 			Process p = Runtime.getRuntime().exec("REG IMPORT " + file_name);
 			p.waitFor();
 			p.destroy();
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 		}
 	}

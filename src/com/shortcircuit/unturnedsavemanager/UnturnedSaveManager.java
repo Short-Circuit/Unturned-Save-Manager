@@ -6,6 +6,7 @@ import com.shortcircuit.unturnedsavemanager.registry.WinRegistry;
 import com.shortcircuit.unturnedsavemanager.swing.Confirmation;
 import com.shortcircuit.unturnedsavemanager.swing.InputConfirmation;
 import com.shortcircuit.unturnedsavemanager.swing.MapListModel;
+import com.shortcircuit.unturnedsavemanager.swing.RenameConfirmation;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -42,6 +43,7 @@ public class UnturnedSaveManager {
 	private JButton button_load;
 	private JButton button_delete;
 	private JButton button_restore;
+	private JButton button_rename;
 	private final RegistrySaveManager save_manager = new RegistrySaveManager();
 	private static UnturnedSaveManager manager;
 	private static Method LOAD_MAP;
@@ -50,19 +52,22 @@ public class UnturnedSaveManager {
 	private static Method RESET_MAP;
 	private static Method CONFIRM_OVERWRITE;
 	private static Method RESTORE_BACKUP;
+	private static Method RENAME_SAVE;
 	public static final File SAVE_DIR = new File("Saves");
 	private final SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd'_'HH-mm-ss");
-	static{
+
+	static {
 		SAVE_DIR.mkdirs();
-		try{
+		try {
 			LOAD_MAP = UnturnedSaveManager.class.getDeclaredMethod("loadMap");
 			DELETE_MAP = UnturnedSaveManager.class.getDeclaredMethod("deleteMap");
 			SAVE_MAP = UnturnedSaveManager.class.getDeclaredMethod("saveMap", String.class, boolean.class);
 			RESET_MAP = UnturnedSaveManager.class.getDeclaredMethod("resetMap");
 			CONFIRM_OVERWRITE = UnturnedSaveManager.class.getDeclaredMethod("confirmOverwrite", String.class, boolean.class);
 			RESTORE_BACKUP = UnturnedSaveManager.class.getDeclaredMethod("restoreBackup");
+			RENAME_SAVE = UnturnedSaveManager.class.getDeclaredMethod("renameSave", String.class);
 		}
-		catch(ReflectiveOperationException e){
+		catch(ReflectiveOperationException e) {
 			e.printStackTrace();
 		}
 	}
@@ -76,16 +81,17 @@ public class UnturnedSaveManager {
 		frame.setIconImage(Toolkit.getDefaultToolkit().getImage(UnturnedSaveManager.class
 				.getResource("/com/shortcircuit/unturnedsavemanager/resources/icon.png")));
 		frame.setContentPane(content_panel);
-		final MapListModel model = new MapListModel();
+		final MapListModel model = new MapListModel(map_list);
 		map_list.setModel(model);
 		new Thread(model).start();
 		updateMapName();
 		map_list.addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				boolean selected = e.getFirstIndex() != -1;
+				boolean selected = map_list.getSelectedValue() != null;
 				button_delete.setEnabled(selected);
-				button_load.setEnabled(selected);
+				button_rename.setEnabled(selected && !map_list.getSelectedValue().isBackup());
+				button_load.setEnabled(selected && !map_list.getSelectedValue().isBackup());
 				button_restore.setEnabled(selected && map_list.getSelectedValue().isBackup());
 			}
 		});
@@ -115,13 +121,13 @@ public class UnturnedSaveManager {
 		button_load.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Load map", "Overwrite the current map?", LOAD_MAP, null);
+				new Confirmation(manager, frame.getIconImage(), "Load map", "Overwrite the current map?", LOAD_MAP, null);
 			}
 		});
 		button_delete.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Delete map", "Delete this map?", DELETE_MAP, null);
+				new Confirmation(manager, frame.getIconImage(), "Delete map", "Delete this map?", DELETE_MAP, null);
 			}
 		});
 		button_backup.addActionListener(new ActionListener() {
@@ -133,25 +139,30 @@ public class UnturnedSaveManager {
 		button_export.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new InputConfirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(),
-						"Save as", CONFIRM_OVERWRITE);
+				new InputConfirmation(manager, frame.getIconImage(), "Save as", CONFIRM_OVERWRITE);
 			}
 		});
 		button_reset.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Reset map",
-						"Reset current map?", RESET_MAP, null);
+				new Confirmation(manager, frame.getIconImage(), "Reset map", "Reset current map?",
+						RESET_MAP, null);
 			}
 		});
 		button_restore.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(),
-						"Restore backup", "Overwrite the current map?", RESTORE_BACKUP, null);
+				new Confirmation(manager, frame.getIconImage(), "Restore backup",
+						"Overwrite the current map?", RESTORE_BACKUP, null);
 			}
 		});
 		saveDefaults();
+		button_rename.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new RenameConfirmation(manager, frame.getIconImage(), "Rename save", RENAME_SAVE);
+			}
+		});
 	}
 
 	public void updateMapName() {
@@ -166,36 +177,36 @@ public class UnturnedSaveManager {
 		if(map_name != null) {
 			current_map.setText(map_name);
 		}
-		else{
+		else {
 			current_map.setText("Unnamed");
 		}
 	}
 
-	private void loadMap(){
+	private void loadMap() {
 		save_manager.importReg(map_list.getSelectedValue().getFile());
 		updateMapName();
 	}
 
-	private void deleteMap(){
+	private void deleteMap() {
 		for(MapSave map : map_list.getSelectedValuesList()) {
 			map.getFile().delete();
 		}
 	}
 
-	private void createBackup(){
+	private void createBackup() {
 		save_manager.backUpWorld(date_format.format(new Date()));
 	}
 
-	private void saveMap(String map_name, boolean save_players){
+	private void saveMap(String map_name, boolean save_players) {
 		save_manager.save(map_name, save_players);
 	}
 
-	private void resetMap(){
+	private void resetMap() {
 		save_manager.resetMap();
 		updateMapName();
 	}
 
-	private void restoreBackup(){
+	private void restoreBackup() {
 		save_manager.restoreBackup(map_list.getSelectedValue().getName());
 		updateMapName();
 	}
@@ -203,15 +214,20 @@ public class UnturnedSaveManager {
 	private void confirmOverwrite(String map_name, boolean save_players) {
 		File file = new File(SAVE_DIR + "/" + map_name + ".reg");
 		if(file.exists()) {
-			new Confirmation(manager, frame.getLocationOnScreen(), frame.getIconImage(), "Export map",
-					"Overwrite save file?", SAVE_MAP, null, map_name, save_players);
+			new Confirmation(manager, frame.getIconImage(), "Export map", "Overwrite save file?",
+					SAVE_MAP, null, map_name, save_players);
 		}
-		else{
+		else {
 			saveMap(map_name, save_players);
 		}
 	}
 
-	private void saveDefaults(){
+	private void renameSave(String new_name){
+		map_list.getSelectedValue().rename(new_name);
+	}
+
+
+	private void saveDefaults() {
 		try {
 			Files.copy(UnturnedSaveManager.class.getResource("/com/shortcircuit/unturnedsavemanager/" +
 					"resources/LICENSE.txt").openStream(), new File("LICENSE.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -222,7 +238,7 @@ public class UnturnedSaveManager {
 			Files.copy(UnturnedSaveManager.class.getResource("/com/shortcircuit/unturnedsavemanager/" +
 					"resources/USAGE.txt").openStream(), new File("USAGE.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
 		}
-		catch(IOException e){
+		catch(IOException e) {
 			e.printStackTrace();
 		}
 	}

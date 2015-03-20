@@ -1,7 +1,6 @@
 package com.shortcircuit.unturnedsavemanager.swing;
 
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -27,13 +26,13 @@ public class InputConfirmation extends JDialog {
 	private final Object parent;
 	private final Method invoke_on_OK;
 
-	public InputConfirmation(Object parent, Point point, Image icon_image, String title, Method invoke_on_OK) {
+	public InputConfirmation(Object parent, Image icon_image, String title, Method invoke_on_OK) {
 		this.parent = parent;
 		this.invoke_on_OK = invoke_on_OK;
 		setContentPane(contentPane);
 		setModal(true);
 		getRootPane().setDefaultButton(buttonOK);
-		setLocation(point);
+		setLocationByPlatform(true);
 		setIconImage(icon_image);
 		setTitle(title);
 

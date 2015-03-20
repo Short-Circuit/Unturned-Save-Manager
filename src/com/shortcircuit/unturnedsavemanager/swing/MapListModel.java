@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.JList;
 import javax.swing.ListModel;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
@@ -25,17 +26,20 @@ public class MapListModel implements ListModel<MapSave>, Runnable {
 	private final File save_dir = new File("Saves");
 	private final List<MapSave> saves = new ArrayList<>();
 	private final Set<ListDataListener> listeners = new HashSet<>();
+	private final JList<MapSave> owner_list;
 	private boolean halted = false;
 	private WatchKey watch_key;
 
-	public MapListModel() {
+	public MapListModel(JList<MapSave> owner_list) {
+		this.owner_list = owner_list;
 		save_dir.mkdirs();
 		for(File file : save_dir.listFiles()) {
 			saves.add(new MapSave(file));
 		}
 		try {
 			Path path = save_dir.toPath();
-			watch_key = path.register(FileSystems.getDefault().newWatchService(), StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
+			watch_key = path.register(FileSystems.getDefault().newWatchService(),
+					StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -74,6 +78,7 @@ public class MapListModel implements ListModel<MapSave>, Runnable {
 				for(ListDataListener listener : listeners) {
 					listener.contentsChanged(new ListDataEvent(this, ListDataEvent.CONTENTS_CHANGED, 0, saves.size()));
 				}
+				owner_list.setSelectedIndices(new int[0]);
 			}
 		}
 	}
