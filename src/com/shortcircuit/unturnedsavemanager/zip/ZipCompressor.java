@@ -1,4 +1,7 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.zip;
+
+import com.shortcircuit.unturnedsavemanager.Main;
+import com.shortcircuit.unturnedsavemanager.ui.ZipProgress;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,10 +12,22 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ZipCompressor implements Runnable {
+	private static final int COMPRESSION_METHOD;
 	private int total_read = 0;
 	private final File output;
 	private final ZipFileWrapper[] sources;
 	private final ZipProgress parent;
+
+	static{
+		int val = Deflater.BEST_COMPRESSION;
+		try{
+			val = (int)Deflater.class.getDeclaredField(Main.SETTINGS.getProperty("compression_method")).get(null);
+		}
+		catch (ReflectiveOperationException e) {
+			Main.SETTINGS.setProperty("compression_method", "BEST_COMPRESSION");
+		}
+		COMPRESSION_METHOD = val;
+	}
 
 	public ZipCompressor(ZipProgress parent, File output, ZipFileWrapper[] sources) {
 		this.parent = parent;
@@ -31,7 +46,7 @@ public class ZipCompressor implements Runnable {
 
 	public synchronized void packZip(File output, ZipFileWrapper[] sources) throws IOException {
 		ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(output));
-		zipOut.setLevel(Deflater.BEST_COMPRESSION);
+		zipOut.setLevel(COMPRESSION_METHOD);
 		for (ZipFileWrapper source : sources) {
 			if (source.getFile().isDirectory()) {
 				zipDir(zipOut, "", source);
@@ -108,6 +123,9 @@ public class ZipCompressor implements Runnable {
 	}
 
 	public static int folderSize(File directory) {
+		if(directory.isFile() || directory.listFiles() == null){
+			return (int)directory.length();
+		}
 		int length = 0;
 		for (File file : directory.listFiles()) {
 			if (file.isFile()) {

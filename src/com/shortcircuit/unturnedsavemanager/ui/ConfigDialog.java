@@ -1,4 +1,4 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

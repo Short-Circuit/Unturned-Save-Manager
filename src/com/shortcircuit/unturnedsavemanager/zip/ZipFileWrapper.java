@@ -1,4 +1,6 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.zip;
+
+import com.shortcircuit.unturnedsavemanager.structures.FileWrapper;
 
 import java.io.File;
 
@@ -10,7 +12,6 @@ public class ZipFileWrapper extends FileWrapper {
 	public ZipFileWrapper(File parent, File file) {
 		super(file);
 		zip_dir = parent.getPath().split("Unturned\\\\")[1] + "\\" + file.getName();
-		System.out.println(zip_dir);
 	}
 	public String getZipDir(){
 		return zip_dir;

@@ -1,4 +1,6 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.zip;
+
+import com.shortcircuit.unturnedsavemanager.ui.ZipProgress;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,7 +48,6 @@ public class ZipExtractor implements Runnable {
 				String file_name = entry.getName();
 				File file = new File(dest + "\\" + file_name);
 				new File(file.getParent()).mkdirs();
-				System.out.println(entry_size);
 				FileOutputStream out = new FileOutputStream(file);
 				int len;
 				int written = 0;

@@ -1,4 +1,4 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.ui;
 
 import java.io.File;
 
@@ -8,10 +8,10 @@ import javax.swing.event.ListDataListener;
 /**
  * @author ShortCircuit908
  */
-public class SimpleListModel implements ListModel<String> {
+public class MapListModel implements ListModel<String> {
 	private final File[] files;
 
-	public SimpleListModel(File[] files) {
+	public MapListModel(File[] files) {
 		this.files = files;
 	}
 
@@ -25,17 +25,15 @@ public class SimpleListModel implements ListModel<String> {
 		return index >= 0 && index < files.length ? files[index].getName().replace(".zip", "") : null;
 	}
 
-	public File getFile(int index){
+	public File getFile(int index) {
 		return index >= 0 && index < files.length ? files[index] : null;
 	}
 
 	@Override
 	public void addListDataListener(ListDataListener l) {
-
 	}
 
 	@Override
 	public void removeListDataListener(ListDataListener l) {
-
 	}
 }

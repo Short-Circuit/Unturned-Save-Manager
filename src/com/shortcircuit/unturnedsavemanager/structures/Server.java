@@ -1,4 +1,6 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.structures;
+
+import com.shortcircuit.unturnedsavemanager.Main;
 
 import java.io.File;
 import java.util.ArrayList;

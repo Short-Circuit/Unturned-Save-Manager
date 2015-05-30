@@ -1,4 +1,7 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.ui;
+
+import com.shortcircuit.unturnedsavemanager.structures.FileWrapper;
+import com.shortcircuit.unturnedsavemanager.structures.Server;
 
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
@@ -7,10 +10,10 @@ import javax.swing.tree.TreePath;
 /**
  * @author ShortCircuit908
  */
-public class SimpleTreeModel implements TreeModel {
+public class MapTreeModel implements TreeModel {
 	private final Server[] servers;
 
-	public SimpleTreeModel(Server... servers) {
+	public MapTreeModel(Server... servers) {
 		this.servers = servers;
 	}
 

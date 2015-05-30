@@ -1,4 +1,4 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.structures;
 
 import java.io.File;
 

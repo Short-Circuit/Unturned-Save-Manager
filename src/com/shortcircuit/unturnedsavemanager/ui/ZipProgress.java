@@ -1,4 +1,8 @@
-package com.shortcircuit.unturnedsavemanager;
+package com.shortcircuit.unturnedsavemanager.ui;
+
+import com.shortcircuit.unturnedsavemanager.zip.ZipCompressor;
+import com.shortcircuit.unturnedsavemanager.zip.ZipExtractor;
+import com.shortcircuit.unturnedsavemanager.zip.ZipFileWrapper;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -32,6 +36,7 @@ public class ZipProgress extends JDialog {
 	private ZipProgress(){
 		setContentPane(contentPane);
 		setAlwaysOnTop(true);
+		setLocationByPlatform(true);
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
